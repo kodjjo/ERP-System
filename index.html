@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inventory List</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-200 via-blue-300 to-blue-400 min-h-screen text-white">
+
+  <div class="max-w-4xl mx-auto pt-12 pb-20 px-4 text-gray-900">
+
+    <!-- Page Heading -->
+    <h1 class="text-4xl font-bold text-center text-gray-800 mb-10">Inventory List</h1>
+
+    <!-- Add button -->
+   <div class="mb-6">
+  <input
+    type="text"
+    id="searchInput"
+    placeholder="🔍 Search inventory..."
+    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800"
+    oninput="filterInventory()"
+  />
+</div>
+
+
+    <!-- Inventory Cards List -->
+    <div id="inventoryList" class="space-y-6"></div>
+
+    <!-- Inventory list -->
+    <div id="inventoryList" class="space-y-6"></div>
+    <div class="flex justify-center mt-8">
+  <a href="create.html" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition">
+    ➕ Add Inventory
+  </a>
+</div>
+
+
+  </div>
+
+  <script>
+    function getStockBadge(quantity) {
+      quantity = parseInt(quantity);
+      if (quantity <= 5) {
+        return `<span class="bg-red-100 text-red-600 text-xs font-semibold px-2 py-1 rounded-full">Low</span>`;
+      } else if (quantity <= 20) {
+        return `<span class="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2 py-1 rounded-full">Medium</span>`;
+      } else {
+        return `<span class="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">High</span>`;
+      }
+    }
+
+    function renderInventory(filteredInventory = null) {
+      const inventoryList = document.getElementById('inventoryList');
+      inventoryList.innerHTML = '';
+
+      const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+      const data = filteredInventory || inventory;
+
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = "bg-white rounded-2xl shadow p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 transform transition duration-500 opacity-0 translate-y-4 hover:shadow-lg";
+
+        div.innerHTML = `
+          <div class="flex-1">
+            <h2 class="text-xl font-semibold text-gray-800">${item.name}</h2>
+            <p class="text-gray-600 flex items-center gap-2">
+              Quantity: ${item.quantity} ${getStockBadge(item.quantity)}
+            </p>
+            <p class="text-gray-600">Price: GHS ${item.price}</p>
+          </div>
+
+          ${item.image ? `<img src="${item.image}" alt="item image" class="w-24 h-24 object-cover rounded border" />` : ''}
+
+          <div class="flex flex-col gap-2 sm:ml-4">
+            <button onclick="editItem(${item.id})" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm">Edit</button>
+            <button onclick="deleteItem(${item.id})" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">Delete</button>
+            <button onclick="showItem(${item.id})" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-1 rounded text-sm">Show</button>
+          </div>
+        `;
+
+        inventoryList.appendChild(div);
+        requestAnimationFrame(() => div.classList.remove('opacity-0', 'translate-y-4'));
+      });
+    }
+
+    function filterInventory() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+
+      const filtered = inventory.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        String(item.quantity).includes(query) ||
+        String(item.price).includes(query)
+      );
+
+      renderInventory(filtered);
+    }
+
+    function deleteItem(id) {
+      Swal.fire({
+        title: 'Are you sure?',
+        text: 'This item will be permanently deleted.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+          const updated = inventory.filter(item => item.id !== id);
+          localStorage.setItem('inventory', JSON.stringify(updated));
+          renderInventory();
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Item deleted',
+            showConfirmButton: false,
+            timer: 1500,
+            timerProgressBar: true
+          });
+        }
+      });
+    }
+
+    function editItem(id) {
+      const inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+      const itemToEdit = inventory.find(item => item.id === id);
+      localStorage.setItem('editItem', JSON.stringify(itemToEdit));
+      window.location.href = 'create.html';
+    }
+
+    function showItem(id) {
+      localStorage.setItem('showItemId', id);
+      window.location.href = 'show.html';
+    }
+
+    renderInventory();
+  </script>
+</body>
+</html>
